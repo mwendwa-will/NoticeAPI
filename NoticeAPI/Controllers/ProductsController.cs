@@ -1,9 +1,8 @@
-﻿// Controllers/ProductsController.cs
-
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using NoticeAPI.Models;
 using NoticeAPI.Repositories;
+using NoticeAPI.Services;
 
 namespace NoticeAPI.Controllers
 {
@@ -13,10 +12,12 @@ namespace NoticeAPI.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly IProductRepository _repository;
+        private readonly INotificationService _notificationService;
 
-        public ProductsController(IProductRepository repository)
+        public ProductsController(IProductRepository repository, INotificationService notificationService)
         {
             _repository = repository;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -46,6 +47,14 @@ namespace NoticeAPI.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             await _repository.Create(product);
+
+            // Send notification to a topic (e.g., "new-products")
+            await _notificationService.SendTopicNotificationAsync(
+                "new-products",
+                "New Product Added",
+                $"Check out {product.Name} now available for ${product.Price}!"
+            );
+
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
@@ -69,6 +78,16 @@ namespace NoticeAPI.Controllers
         {
             if (stock < 0) return BadRequest("Stock cannot be negative");
             await _repository.UpdateStock(id, stock);
+
+            // Send notification to a specific device (requires a client token)
+            // For demo, assume a hardcoded token; in practice, store tokens per user
+            string clientToken = "YOUR_DEVICE_TOKEN_HERE";
+            await _notificationService.SendNotificationAsync(
+                clientToken,
+                "Stock Updated",
+                $"Product ID {id} stock is now {stock}."
+            );
+
             return NoContent();
         }
 

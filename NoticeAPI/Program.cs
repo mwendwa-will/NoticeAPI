@@ -1,5 +1,7 @@
 
 using Asp.Versioning;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.OpenApi.Models;
 using NoticeAPI.Middleware;
 using NoticeAPI.Repositories;
@@ -8,10 +10,17 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Initialize Firebase Admin SDK
+FirebaseApp.Create(new AppOptions()
+{
+    Credential = GoogleCredential.FromFile("fcm-demo-af1be-firebase-adminsdk-rv9ol-1532afe947.json")
+});
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddScoped<IDbConnectionFactory, MariaDbConnectionFactory>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<INotificationService, FirebaseNotificationService>();
 builder.Services.AddMemoryCache();
 
 // Configure API versioning with Asp.Versioning.Mvc
